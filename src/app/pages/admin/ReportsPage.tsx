@@ -1,12 +1,16 @@
 import { useMemo, useState } from "react";
 import { Download, FileText } from "lucide-react";
 import { Panel, SecondaryButton, SelectFilter, TextFilter, Toolbar } from "@/app/components/admin/ui";
+import { useToast } from "@/app/components/admin/Toast";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
-import { reports } from "@/app/lib/mockData";
+import { reports as initialReports } from "@/app/lib/mockData";
+import { downloadCsv } from "@/app/lib/csv";
 
-const categories = Array.from(new Set(reports.map((r) => r.category)));
+const categories = Array.from(new Set(initialReports.map((r) => r.category)));
 
 export default function ReportsPage() {
+  const showToast = useToast();
+  const [reports, setReports] = useState(initialReports);
   const [category, setCategory] = useState("");
   const [query, setQuery] = useState("");
   usePageHeader(
@@ -19,7 +23,7 @@ export default function ReportsPage() {
       reports.filter(
         (r) => (!category || r.category === category) && (!query || r.name.toLowerCase().includes(query.toLowerCase()))
       ),
-    [category, query]
+    [reports, category, query]
   );
 
   return (
@@ -44,7 +48,16 @@ export default function ReportsPage() {
             <p className="text-xs text-[#667085] mb-4 flex-1">{r.description}</p>
             <div className="flex items-center justify-between text-[11px] text-[#98A2B3] border-t border-gray-100 pt-3">
               <span>Last run {r.lastRun}</span>
-              <SecondaryButton className="!px-2.5 !py-1.5">
+              <SecondaryButton
+                className="!px-2.5 !py-1.5"
+                onClick={() => {
+                  downloadCsv(r.name, [
+                    { report: r.name, category: r.category, owner: r.owner, generatedAt: "Just now" },
+                  ]);
+                  setReports((prev) => prev.map((x) => (x.id === r.id ? { ...x, lastRun: "Just now" } : x)));
+                  showToast(`${r.name} run and exported.`);
+                }}
+              >
                 <Download size={12} /> Run &amp; export
               </SecondaryButton>
             </div>

@@ -59,6 +59,13 @@ const staffNames = [
   "Kelechi Nnaji", "Halima Yakubu", "Daniel Ekong", "Precious Attah", "Ibrahim Lawal",
 ];
 
+// Candidate case owners for "Assign owner" actions across Exceptions, Artefact
+// Reconciliation and Journey detail — a mix of individual ops staff and desks.
+export const caseOwners = [
+  "Adaeze Nwosu", "Tunde Bakare", "Fatima Sule", "Chidi Okonkwo",
+  "Ops – Consent Desk", "Ops – Identity Desk", "Compliance – AML Team", "Compliance – Financial Crime",
+];
+
 export const staff: StaffMember[] = staffNames.map((name, i) => {
   const accountsOpened = 20 + Math.floor(rand() * 260);
   const fundedAccounts = Math.floor(accountsOpened * (0.55 + rand() * 0.35));

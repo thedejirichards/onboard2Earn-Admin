@@ -6,6 +6,7 @@ import Drawer from "@/app/components/admin/Drawer";
 import StatusBadge from "@/app/components/admin/StatusBadge";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
 import { auditLogs } from "@/app/lib/mockData";
+import { downloadCsv } from "@/app/lib/csv";
 import type { AuditLogEntry } from "@/app/lib/types";
 
 const modules = Array.from(new Set(auditLogs.map((a) => a.module)));
@@ -48,7 +49,26 @@ export default function AuditLogsPage() {
       <Toolbar
         columns={3}
         actions={
-          <SecondaryButton><Download size={14} /> Export audit report</SecondaryButton>
+          <SecondaryButton
+            onClick={() =>
+              downloadCsv(
+                "audit-logs",
+                rows.map((a) => ({
+                  dateTime: a.dateTime,
+                  user: a.user,
+                  staffId: a.staffId,
+                  role: a.role,
+                  module: a.module,
+                  action: a.action,
+                  recordAffected: a.recordAffected,
+                  outcome: a.outcome,
+                  approvalReference: a.approvalReference ?? "",
+                }))
+              )
+            }
+          >
+            <Download size={14} /> Export audit report
+          </SecondaryButton>
         }
       >
         <TextFilter value={query} onChange={setQuery} placeholder="Search user or record..." className="w-full col-span-2" />

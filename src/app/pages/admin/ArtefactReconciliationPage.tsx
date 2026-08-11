@@ -4,13 +4,17 @@ import { PrimaryButton, SecondaryButton, SelectFilter, Toolbar } from "@/app/com
 import { DataTable, Column, actionsColumn } from "@/app/components/admin/DataTable";
 import Drawer from "@/app/components/admin/Drawer";
 import StatusBadge from "@/app/components/admin/StatusBadge";
+import { useToast } from "@/app/components/admin/Toast";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
-import { artefacts } from "@/app/lib/mockData";
+import { artefacts as initialArtefacts } from "@/app/lib/mockData";
+import { downloadCsv } from "@/app/lib/csv";
 import type { ArtefactRecord } from "@/app/lib/types";
 
-const statuses = Array.from(new Set(artefacts.map((a) => a.status)));
+const statuses = Array.from(new Set(initialArtefacts.map((a) => a.status)));
 
 export default function ArtefactReconciliationPage() {
+  const showToast = useToast();
+  const [artefacts, setArtefacts] = useState(initialArtefacts);
   const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<ArtefactRecord | null>(null);
   usePageHeader(
@@ -18,7 +22,14 @@ export default function ArtefactReconciliationPage() {
     "Monitor artefact synchronisation to the account-opening records portal."
   );
 
-  const rows = useMemo(() => artefacts.filter((a) => !status || a.status === status), [status]);
+  const rows = useMemo(() => artefacts.filter((a) => !status || a.status === status), [artefacts, status]);
+
+  function updateSelected(patch: Partial<ArtefactRecord>) {
+    if (!selected) return;
+    const updated = { ...selected, ...patch };
+    setSelected(updated);
+    setArtefacts((prev) => prev.map((a) => (a.journeyReference === selected.journeyReference ? updated : a)));
+  }
 
   const summary = [
     { label: "Successfully synchronised", count: artefacts.filter((a) => a.status === "Stored successfully").length },
@@ -53,7 +64,25 @@ export default function ArtefactReconciliationPage() {
 
       <Toolbar
         actions={
-          <SecondaryButton>
+          <SecondaryButton
+            onClick={() =>
+              downloadCsv(
+                "artefact-reconciliation",
+                rows.map((a) => ({
+                  journeyReference: a.journeyReference,
+                  accountOpeningReference: a.accountOpeningReference,
+                  accountNumber: a.accountNumber,
+                  customer: a.customer,
+                  dateOpened: a.dateOpened,
+                  storedArtefacts: a.storedArtefacts,
+                  expectedArtefacts: a.expectedArtefacts,
+                  status: a.status,
+                  retryCount: a.retryCount,
+                  owner: a.owner ?? "",
+                }))
+              )
+            }
+          >
             <Download size={14} /> Export
           </SecondaryButton>
         }
@@ -100,9 +129,33 @@ export default function ArtefactReconciliationPage() {
             )}
 
             <div className="flex flex-wrap gap-2 pt-2">
-              <PrimaryButton><RefreshCw size={14} /> Retry synchronisation</PrimaryButton>
-              <SecondaryButton>Reconcile with repository</SecondaryButton>
-              <SecondaryButton><ExternalLink size={14} /> Open in records portal</SecondaryButton>
+              <PrimaryButton
+                onClick={() => {
+                  updateSelected({
+                    status: "Stored successfully",
+                    storedArtefacts: selected.expectedArtefacts,
+                    retryCount: selected.retryCount + 1,
+                    lastAttempt: "Just now",
+                    lastError: null,
+                  });
+                  showToast(`Synchronisation retried for ${selected.journeyReference} — all artefacts now stored.`);
+                }}
+              >
+                <RefreshCw size={14} /> Retry synchronisation
+              </PrimaryButton>
+              <SecondaryButton
+                onClick={() => {
+                  updateSelected({ status: "Stored successfully" });
+                  showToast(`${selected.journeyReference} reconciled against the account-opening repository.`);
+                }}
+              >
+                Reconcile with repository
+              </SecondaryButton>
+              <SecondaryButton
+                onClick={() => showToast("The records portal is an external system and isn't connected in this demo.")}
+              >
+                <ExternalLink size={14} /> Open in records portal
+              </SecondaryButton>
             </div>
             <p className="text-[11px] text-[#98A2B3] border-t border-gray-100 pt-3">
               A retry will not recreate the account or create duplicate artefact records.

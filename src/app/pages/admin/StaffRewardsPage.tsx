@@ -6,6 +6,7 @@ import Drawer from "@/app/components/admin/Drawer";
 import StatusBadge from "@/app/components/admin/StatusBadge";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
 import { staffRewards } from "@/app/lib/mockData";
+import { downloadCsv } from "@/app/lib/csv";
 import { formatNaira, formatNumber } from "@/app/lib/format";
 import type { StaffRewardEligibility } from "@/app/lib/types";
 
@@ -61,7 +62,27 @@ export default function StaffRewardsPage() {
 
       <Toolbar
         actions={
-          <SecondaryButton><Download size={14} /> Export eligibility</SecondaryButton>
+          <SecondaryButton
+            onClick={() =>
+              downloadCsv(
+                "staff-rewards-eligibility",
+                rows.map((r) => ({
+                  category: r.category,
+                  rankOrPosition: r.rankOrPosition,
+                  employeeOrGroup: r.employeeOrGroup,
+                  accountsOpened: r.accountsOpened,
+                  fundedAccounts: r.fundedAccounts,
+                  depositMobilised: r.depositMobilised,
+                  targetAchievement: r.targetAchievement,
+                  gateResult: r.gateResult,
+                  proposedReward: r.proposedReward,
+                  status: r.status,
+                }))
+              )
+            }
+          >
+            <Download size={14} /> Export eligibility
+          </SecondaryButton>
         }
       >
         <SelectFilter label="Reward category" value={category} onChange={setCategory} options={categories} className="w-full" />

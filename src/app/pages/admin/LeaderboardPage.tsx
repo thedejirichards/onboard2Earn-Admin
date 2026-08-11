@@ -6,6 +6,7 @@ import { DataTable, Column, actionsColumn } from "@/app/components/admin/DataTab
 import StatusBadge from "@/app/components/admin/StatusBadge";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
 import { leaderboard } from "@/app/lib/mockData";
+import { downloadCsv } from "@/app/lib/csv";
 import { formatNaira, formatNumber } from "@/app/lib/format";
 import type { LeaderboardEntry } from "@/app/lib/types";
 
@@ -53,7 +54,30 @@ export default function LeaderboardPage() {
     <div>
       <Toolbar
         actions={
-          <SecondaryButton><Download size={14} /> Export leaderboard</SecondaryButton>
+          <SecondaryButton
+            onClick={() =>
+              downloadCsv(
+                "leaderboard",
+                rows.map((e) => ({
+                  rank: e.rank,
+                  name: e.name,
+                  orgUnit: e.orgUnit,
+                  league: e.league,
+                  points: e.points,
+                  movement: e.movement,
+                  accountsOpened: e.accountsOpened,
+                  activationRate: e.activationRate,
+                  fundingRate: e.fundingRate,
+                  depositMobilised: e.depositMobilised,
+                  gateResult: e.gateResult,
+                  status: e.status,
+                  rewardStatus: e.rewardStatus,
+                }))
+              )
+            }
+          >
+            <Download size={14} /> Export leaderboard
+          </SecondaryButton>
         }
       >
         <SelectFilter label="League" value={league} onChange={setLeague} options={leagues} className="w-full" />

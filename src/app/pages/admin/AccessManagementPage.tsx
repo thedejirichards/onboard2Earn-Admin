@@ -1,17 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
-import { Panel, PrimaryButton, SectionCard } from "@/app/components/admin/ui";
+import { Panel, PrimaryButton, SecondaryButton, SectionCard } from "@/app/components/admin/ui";
 import { DataTable, Column, actionsColumn } from "@/app/components/admin/DataTable";
+import Modal, { FormField, inputClass } from "@/app/components/admin/Modal";
 import StatusBadge from "@/app/components/admin/StatusBadge";
+import { useToast } from "@/app/components/admin/Toast";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
-import { accessUsers } from "@/app/lib/mockData";
+import { accessUsers as initialAccessUsers, staff } from "@/app/lib/mockData";
 import { roleDescriptions, roles } from "@/app/lib/nav";
-import type { AccessUser } from "@/app/lib/types";
+import type { AccessUser, RoleName } from "@/app/lib/types";
 
 export default function AccessManagementPage() {
   const navigate = useNavigate();
+  const showToast = useToast();
   const [showMatrix, setShowMatrix] = useState(false);
+  const [accessUsers, setAccessUsers] = useState(initialAccessUsers);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignStaffId, setAssignStaffId] = useState(staff[0]?.staffId ?? "");
+  const [assignRole, setAssignRole] = useState<RoleName>(roles[0]);
   usePageHeader(
     "Access Management",
     "Manage elevated Admin Portal roles, approval and periodic review."
@@ -32,7 +39,15 @@ export default function AccessManagementPage() {
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <PrimaryButton><Plus size={14} /> Assign role</PrimaryButton>
+        <PrimaryButton
+          onClick={() => {
+            setAssignStaffId(staff[0]?.staffId ?? "");
+            setAssignRole(roles[0]);
+            setAssignOpen(true);
+          }}
+        >
+          <Plus size={14} /> Assign role
+        </PrimaryButton>
       </div>
 
       <SectionCard
@@ -65,6 +80,69 @@ export default function AccessManagementPage() {
         Access is automatically removed following staff exit or NT disablement, subject to immediate revocation,
         periodic review, dormant elevated-access review and temporary-role expiry. Every access change is logged.
       </p>
+
+      <Modal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        title="Assign role"
+        subtitle="Request an elevated Admin Portal role for a staff member"
+        footer={
+          <>
+            <SecondaryButton onClick={() => setAssignOpen(false)}>Cancel</SecondaryButton>
+            <PrimaryButton
+              onClick={() => {
+                const s = staff.find((x) => x.staffId === assignStaffId);
+                if (!s) return;
+                setAccessUsers((prev) => {
+                  const existing = prev.find((u) => u.staffId === s.staffId);
+                  if (existing) {
+                    return prev.map((u) =>
+                      u.staffId === s.staffId
+                        ? {
+                            ...u,
+                            currentRoles: u.currentRoles.includes(assignRole) ? u.currentRoles : [...u.currentRoles, assignRole],
+                            requestStatus: "Pending approval",
+                          }
+                        : u
+                    );
+                  }
+                  const newUser: AccessUser = {
+                    staffId: s.staffId,
+                    name: s.name,
+                    currentRoles: [assignRole],
+                    orgScope: `${s.entity} · ${s.department}`,
+                    requestStatus: "Pending approval",
+                    effectiveDate: "Today",
+                    expiryDate: null,
+                    lastLogin: "—",
+                    accountStatus: "Active",
+                  };
+                  return [newUser, ...prev];
+                });
+                showToast(`${s.name} — ${assignRole} requested, pending approval.`);
+                setAssignOpen(false);
+              }}
+            >
+              Submit request
+            </PrimaryButton>
+          </>
+        }
+      >
+        <FormField label="Staff member">
+          <select value={assignStaffId} onChange={(e) => setAssignStaffId(e.target.value)} className={inputClass}>
+            {staff.map((s) => (
+              <option key={s.staffId} value={s.staffId}>{s.name} — {s.staffId}</option>
+            ))}
+          </select>
+        </FormField>
+        <FormField label="Role">
+          <select value={assignRole} onChange={(e) => setAssignRole(e.target.value as RoleName)} className={inputClass}>
+            {roles.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </FormField>
+      </Modal>
     </div>
   );
 }

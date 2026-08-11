@@ -18,9 +18,9 @@ export default function LoginStartPage() {
   return (
     <DesktopAuthLayout>
       <div className="w-full max-w-[420px]">
-        <div className="lg:hidden flex justify-center mb-8">
+        {/* <div className="lg:hidden flex justify-center mb-8">
           <img src="/Onboard2EarnLogo.svg" alt="Onboard2Earn" className="w-40 h-auto" />
-        </div>
+        </div> */}
 
         <div className="bg-white rounded-lg shadow-[0_2px_16px_rgba(0,0,0,0.12)] px-8 py-10">
           <h1 className="text-2xl font-bold text-[#1b1b1b] mb-2">Admin sign in</h1>

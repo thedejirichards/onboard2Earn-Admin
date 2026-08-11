@@ -1,11 +1,12 @@
 import { useId, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Download } from "lucide-react";
-import { PrimaryButton, SecondaryButton, SelectFilter, TextFilter, Toolbar } from "@/app/components/admin/ui";
+import { SecondaryButton, SelectFilter, TextFilter, Toolbar } from "@/app/components/admin/ui";
 import { DataTable, Column, actionsColumn } from "@/app/components/admin/DataTable";
 import StatusBadge from "@/app/components/admin/StatusBadge";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
 import { journeys } from "@/app/lib/mockData";
+import { downloadCsv } from "@/app/lib/csv";
 import type { Journey } from "@/app/lib/types";
 
 const savedViews = [
@@ -71,14 +72,33 @@ export default function OnboardingJourneysPage() {
 
   return (
     <div>
-      <div className="flex justify-end gap-2 mb-4">
-        <SecondaryButton>
-          <Download size={14} /> Export
-        </SecondaryButton>
-        <PrimaryButton>Assign owner</PrimaryButton>
-      </div>
-
-      <Toolbar columns={6}>
+      <Toolbar
+        columns={6}
+        actions={
+          <SecondaryButton
+            onClick={() =>
+              downloadCsv(
+                "onboarding-journeys",
+                rows.map((j) => ({
+                  reference: j.reference,
+                  customer: j.customerName,
+                  staff: j.initiatingStaff,
+                  branch: j.branch,
+                  department: j.department,
+                  stage: j.stage,
+                  status: j.status,
+                  artefactStatus: j.artefactStatus,
+                  rewardStatus: j.rewardStatus,
+                  lastUpdated: j.lastUpdated,
+                  actionRequired: j.actionRequired,
+                }))
+              )
+            }
+          >
+            <Download size={14} /> Export
+          </SecondaryButton>
+        }
+      >
         <TextFilter value={query} onChange={setQuery} placeholder="Search reference, customer, staff..." className="w-full col-span-2" />
         <div className="flex flex-col gap-1 min-w-0 w-full">
           <label htmlFor={savedViewId} className="text-xs font-medium text-[#344054]">
@@ -101,7 +121,7 @@ export default function OnboardingJourneysPage() {
         <SelectFilter label="Status" value={status} onChange={setStatus} options={statuses} className="w-full" />
         <SelectFilter label="Department" value={department} onChange={setDepartment} options={departments} className="w-full" />
       </Toolbar>
-//
+
       <DataTable
         columns={columns}
         rows={rows}

@@ -1,16 +1,25 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { Panel, PrimaryButton, SectionCard } from "@/app/components/admin/ui";
+import { Panel, PrimaryButton, SecondaryButton, SectionCard } from "@/app/components/admin/ui";
 import { DataTable, Column, actionsColumn } from "@/app/components/admin/DataTable";
 import Drawer from "@/app/components/admin/Drawer";
+import Modal, { FormField, inputClass } from "@/app/components/admin/Modal";
 import StatusBadge from "@/app/components/admin/StatusBadge";
+import { useToast } from "@/app/components/admin/Toast";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
-import { campaigns } from "@/app/lib/mockData";
+import { campaigns as initialCampaigns } from "@/app/lib/mockData";
 import { formatNaira, formatNumber } from "@/app/lib/format";
 import type { Campaign } from "@/app/lib/types";
 
 export default function CampaignsPage() {
+  const showToast = useToast();
+  const [campaigns, setCampaigns] = useState(initialCampaigns);
   const [selected, setSelected] = useState<Campaign | null>(null);
+  const [newCampaignOpen, setNewCampaignOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [eligibleScope, setEligibleScope] = useState("");
   usePageHeader(
     "Campaigns",
     "Configure campaign rules, milestones, targets and comparison groups."
@@ -31,7 +40,17 @@ export default function CampaignsPage() {
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <PrimaryButton><Plus size={14} /> New campaign</PrimaryButton>
+        <PrimaryButton
+          onClick={() => {
+            setName("");
+            setStartDate("");
+            setEndDate("");
+            setEligibleScope("");
+            setNewCampaignOpen(true);
+          }}
+        >
+          <Plus size={14} /> New campaign
+        </PrimaryButton>
       </div>
 
       <DataTable columns={columns} rows={campaigns} keyField={(c) => c.id} />
@@ -85,6 +104,67 @@ export default function CampaignsPage() {
           </div>
         )}
       </Drawer>
+
+      <Modal
+        open={newCampaignOpen}
+        onClose={() => setNewCampaignOpen(false)}
+        title="New campaign"
+        subtitle="Configure a new campaign draft"
+        footer={
+          <>
+            <SecondaryButton onClick={() => setNewCampaignOpen(false)}>Cancel</SecondaryButton>
+            <PrimaryButton
+              onClick={() => {
+                if (!name.trim() || !startDate || !endDate) return;
+                const id = `CMP-${String(campaigns.length + 1).padStart(2, "0")}`;
+                const newCampaign: Campaign = {
+                  id,
+                  name: name.trim(),
+                  status: "Draft",
+                  startDate,
+                  endDate,
+                  eligibleScope: eligibleScope.trim() || "All staff",
+                  participants: 0,
+                  milestones: [],
+                  pointsIssued: 0,
+                  rewardStatus: "Not yet eligible",
+                  configVersion: "v1.0",
+                  lastUpdatedBy: "Deji Richards",
+                  accountTarget: 0,
+                  accountsAchieved: 0,
+                  casaTarget: 0,
+                  casaAchieved: 0,
+                };
+                setCampaigns((prev) => [newCampaign, ...prev]);
+                showToast(`${newCampaign.name} created as a new draft campaign.`);
+                setNewCampaignOpen(false);
+              }}
+            >
+              Create campaign
+            </PrimaryButton>
+          </>
+        }
+      >
+        <FormField label="Campaign name">
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Q4 Deposit Drive" className={inputClass} />
+        </FormField>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Start date">
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass} />
+          </FormField>
+          <FormField label="End date">
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
+          </FormField>
+        </div>
+        <FormField label="Eligible scope">
+          <input
+            value={eligibleScope}
+            onChange={(e) => setEligibleScope(e.target.value)}
+            placeholder="e.g. All retail banking staff"
+            className={inputClass}
+          />
+        </FormField>
+      </Modal>
     </div>
   );
 }

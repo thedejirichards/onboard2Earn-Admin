@@ -4,6 +4,7 @@ import {
   Bell, ChevronDown, ChevronLeft, LogOut, Menu,
 } from "lucide-react";
 import { useAdmin } from "@/app/lib/AdminContext";
+import { ToastProvider } from "./Toast";
 import { usePageHeaderValue } from "@/app/lib/PageHeaderContext";
 import { roles, visibleNavGroups } from "@/app/lib/nav";
 import { exceptions, artefacts } from "@/app/lib/mockData";
@@ -30,6 +31,7 @@ export default function AdminLayout() {
   const pageHeader = usePageHeaderValue();
 
   return (
+    <ToastProvider>
     <div className="h-screen w-full flex bg-[#F7F8FA] overflow-hidden">
       {/* Left navigation */}
       <aside
@@ -240,5 +242,6 @@ export default function AdminLayout() {
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }

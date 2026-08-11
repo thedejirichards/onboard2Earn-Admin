@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router";
 import { ArrowLeft, Check, RefreshCw, Send, UserPlus } from "lucide-react";
 import { Panel, PrimaryButton, SecondaryButton } from "@/app/components/admin/ui";
 import StatusBadge from "@/app/components/admin/StatusBadge";
+import AssignOwnerModal from "@/app/components/admin/AssignOwnerModal";
+import { useToast } from "@/app/components/admin/Toast";
 import { artefacts, auditLogs, journeys } from "@/app/lib/mockData";
 
 const tabs = ["Overview", "Customer Actions", "Identity and Checks", "Account and Artefacts", "Activation and Rewards", "Audit Trail"] as const;
@@ -11,7 +13,10 @@ const timelineStages = ["Account & Consent", "Customer Action", "Identity Verifi
 
 export default function JourneyDetailPage() {
   const { reference } = useParams();
+  const showToast = useToast();
   const [tab, setTab] = useState<(typeof tabs)[number]>("Overview");
+  const [owner, setOwner] = useState<string | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
   const journey = journeys.find((j) => j.reference === reference);
   const artefact = artefacts.find((a) => a.journeyReference === reference);
   const relatedAudit = useMemo(
@@ -49,9 +54,17 @@ export default function JourneyDetailPage() {
             <p className="text-sm text-[#667085]">{journey.customerName} · {journey.accountType}</p>
           </div>
           <div className="flex items-center gap-2">
-            <SecondaryButton><Send size={14} /> Resend consent link</SecondaryButton>
-            <SecondaryButton><RefreshCw size={14} /> Retry technical activity</SecondaryButton>
-            <PrimaryButton><UserPlus size={14} /> Assign owner</PrimaryButton>
+            <SecondaryButton
+              onClick={() => showToast(`Consent link resent to ${journey.maskedPhone}.`)}
+            >
+              <Send size={14} /> Resend consent link
+            </SecondaryButton>
+            <SecondaryButton
+              onClick={() => showToast(`Technical activity retried for ${journey.reference}.`)}
+            >
+              <RefreshCw size={14} /> Retry technical activity
+            </SecondaryButton>
+            <PrimaryButton onClick={() => setAssignOpen(true)}><UserPlus size={14} /> Assign owner</PrimaryButton>
           </div>
         </div>
 
@@ -62,6 +75,7 @@ export default function JourneyDetailPage() {
           <div><p className="text-[#98A2B3] mb-1">Journey age</p><p className="text-[#101828] font-medium">{ageDays} day{ageDays === 1 ? "" : "s"}</p></div>
           <div><p className="text-[#98A2B3] mb-1">Last updated</p><p className="text-[#101828] font-medium">{journey.lastUpdated}</p></div>
           <div><p className="text-[#98A2B3] mb-1">Branch / department</p><p className="text-[#101828] font-medium">{journey.branch} · {journey.department}</p></div>
+          <div><p className="text-[#98A2B3] mb-1">Case owner</p><p className="text-[#101828] font-medium">{owner ?? "Unassigned"}</p></div>
           <div className="col-span-2"><p className="text-[#98A2B3] mb-1">Action required</p><p className={`font-medium ${journey.actionRequired === "None" ? "text-[#98A2B3]" : "text-[#EE7E01]"}`}>{journey.actionRequired}</p></div>
         </div>
 
@@ -199,6 +213,18 @@ export default function JourneyDetailPage() {
           </div>
         </Panel>
       )}
+
+      <AssignOwnerModal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        title={`Assign owner — ${journey.reference}`}
+        subtitle={journey.customerName}
+        currentOwner={owner}
+        onAssign={(newOwner) => {
+          setOwner(newOwner);
+          showToast(`${journey.reference} assigned to ${newOwner}.`);
+        }}
+      />
     </div>
   );
 }

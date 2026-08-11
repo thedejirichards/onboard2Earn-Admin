@@ -5,19 +5,24 @@ import { PrimaryButton, SecondaryButton, SelectFilter, Toolbar } from "@/app/com
 import { DataTable, Column, actionsColumn } from "@/app/components/admin/DataTable";
 import Drawer from "@/app/components/admin/Drawer";
 import StatusBadge from "@/app/components/admin/StatusBadge";
+import AssignOwnerModal from "@/app/components/admin/AssignOwnerModal";
+import { useToast } from "@/app/components/admin/Toast";
 import { usePageHeader } from "@/app/lib/PageHeaderContext";
-import { exceptions } from "@/app/lib/mockData";
+import { exceptions as initialExceptions } from "@/app/lib/mockData";
 import type { ExceptionCase } from "@/app/lib/types";
 
-const types = Array.from(new Set(exceptions.map((e) => e.type)));
+const types = Array.from(new Set(initialExceptions.map((e) => e.type)));
 const priorities = ["Critical", "High", "Medium", "Low"];
 const statuses = ["Open", "In review", "Escalated", "Resolved"];
 
 export default function ExceptionsPage() {
+  const showToast = useToast();
+  const [exceptions, setExceptions] = useState(initialExceptions);
   const [type, setType] = useState("");
   const [priority, setPriority] = useState("");
   const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<ExceptionCase | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
   usePageHeader(
     "Exceptions",
     "Queues for cases requiring operational or compliance attention."
@@ -28,8 +33,15 @@ export default function ExceptionsPage() {
       exceptions.filter(
         (e) => (!type || e.type === type) && (!priority || e.priority === priority) && (!status || e.status === status)
       ),
-    [type, priority, status]
+    [exceptions, type, priority, status]
   );
+
+  function updateSelected(patch: Partial<ExceptionCase>) {
+    if (!selected) return;
+    const updated = { ...selected, ...patch };
+    setSelected(updated);
+    setExceptions((prev) => prev.map((e) => (e.id === selected.id ? updated : e)));
+  }
 
   const summary = [
     { label: "Open", count: exceptions.filter((e) => e.status === "Open").length },
@@ -123,10 +135,25 @@ export default function ExceptionsPage() {
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
-              <PrimaryButton><UserPlus size={14} /> Assign owner</PrimaryButton>
-              <SecondaryButton><Send size={14} /> Resend communication</SecondaryButton>
-              <SecondaryButton>Route to Compliance</SecondaryButton>
-              <SecondaryButton>Escalate</SecondaryButton>
+              <PrimaryButton onClick={() => setAssignOpen(true)}><UserPlus size={14} /> Assign owner</PrimaryButton>
+              <SecondaryButton
+                onClick={() => showToast(`Consent communication resent to ${selected.customer}.`)}
+              >
+                <Send size={14} /> Resend communication
+              </SecondaryButton>
+              <SecondaryButton
+                onClick={() => showToast(`${selected.id} routed to the Compliance queue.`)}
+              >
+                Route to Compliance
+              </SecondaryButton>
+              <SecondaryButton
+                onClick={() => {
+                  updateSelected({ status: "Escalated" });
+                  showToast(`${selected.id} escalated.`);
+                }}
+              >
+                Escalate
+              </SecondaryButton>
             </div>
             <p className="text-[11px] text-[#98A2B3] border-t border-gray-100 pt-3">
               Where a regulated override is permitted, it must be role restricted, reason based, subject to approval and fully logged.
@@ -134,6 +161,20 @@ export default function ExceptionsPage() {
           </div>
         )}
       </Drawer>
+
+      {selected && (
+        <AssignOwnerModal
+          open={assignOpen}
+          onClose={() => setAssignOpen(false)}
+          title={`Assign owner — ${selected.id}`}
+          subtitle={selected.customer}
+          currentOwner={selected.owner}
+          onAssign={(owner) => {
+            updateSelected({ owner });
+            showToast(`${selected.id} assigned to ${owner}.`);
+          }}
+        />
+      )}
     </div>
   );
 }
