@@ -1,7 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import LoginStartPage from "./pages/LoginStartPage";
-import LoginAccountPickerPage from "./pages/LoginAccountPickerPage";
-import LoginPasswordPage from "./pages/LoginPasswordPage";
+import LoginTokenPage from "./pages/LoginTokenPage";
 import AdminLayout from "./components/admin/AdminLayout";
 import { AdminProvider } from "./lib/AdminContext";
 import { PageHeaderProvider } from "./lib/PageHeaderContext";
@@ -38,8 +37,7 @@ function AdminApp() {
 const routes = [
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <LoginStartPage /> },
-  { path: "/login/entra", element: <LoginAccountPickerPage /> },
-  { path: "/login/entra/password", element: <LoginPasswordPage /> },
+  { path: "/login/token", element: <LoginTokenPage /> },
   {
     element: <AdminApp />,
     children: [
